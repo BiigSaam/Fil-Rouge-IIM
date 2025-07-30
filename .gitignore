@@ -1,35 +1,43 @@
-# === Global ===
-*.log
-*.tmp
-*.swp
-.DS_Store
-Thumbs.db
+# === ENV & SENSITIVE ===
 .env
-.env.*
+.env.*    # .env.local, .env.production, etc.
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
 
-# === Node.js (backend & frontend) ===
+# === TERRAFORM ===
+**/.terraform/
+**/*.tfvars
+infra/crash.log
+
+# === NODE & REACT ===
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+backend/node_modules/
+frontend/node_modules/
 
-# === React / Next.js / Build ===
+# Build folders
 frontend/build/
 frontend/.next/
 frontend/.cache/
-
-# === Backend (si build)
 backend/dist/
 backend/build/
 
-# === OS-specific ===
+# === LOGS ===
+*.log
+logs/
+
+# === SYSTEM ===
 .DS_Store
 Thumbs.db
 *.swp
 *~
 
-# === IDEs & Editors ===
+# === IDEs & EDITORS ===
 .vscode/
 .idea/
 *.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# === GIT ===
+.gitattributes

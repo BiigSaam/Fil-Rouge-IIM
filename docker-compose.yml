@@ -7,16 +7,22 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      # Configuration de l'API Gateway pour l'architecture serverless
+      - REACT_APP_API_URL=https://dwg7ep529i.execute-api.eu-west-1.amazonaws.com/prod
+      - VITE_API_URL=https://dwg7ep529i.execute-api.eu-west-1.amazonaws.com/prod
     command: npm run dev -- --host
-    depends_on:
-      - backend
+    
+    # Note: Plus de dépendance backend car remplacé par Lambda + API Gateway
+    # L'application se connecte maintenant directement à AWS
 
-  backend:
-    build:
-      context: ./backend
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: npm start
+  # Backend Express commenté - remplacé par AWS Lambda
+  # backend:
+  #   build:
+  #     context: ./backend
+  #   ports:
+  #     - "3001:3001"
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules
+  #   command: npm start
