@@ -6,6 +6,9 @@ interface Task {
   createdAt?: string;
 }
 
+// Configuration de l'API via les variables d'environnement
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dwg7ep529i.execute-api.eu-west-1.amazonaws.com/prod';
+
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
@@ -14,7 +17,7 @@ function App() {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks`);
+      const res = await fetch(`${API_BASE_URL}/tasks`);
       if (!res.ok) throw new Error('Erreur lors du chargement des tâches');
       const data = await res.json();
       setTasks(data);
@@ -31,7 +34,7 @@ function App() {
     
     try {
       setLoading(true);
-      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks`, {
+      const res = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newTask }),
@@ -53,7 +56,7 @@ function App() {
   const deleteTask = async (id: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: 'DELETE',
       });
       

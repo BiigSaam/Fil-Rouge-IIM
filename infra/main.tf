@@ -79,7 +79,7 @@ resource "aws_lambda_function" "tasks_api" {
   function_name    = "tasks-api"
   role             = aws_iam_role.lambda_role.arn
   handler          = "lambda_function.handler"
-  runtime          = "nodejs18.x"
+  runtime          = "nodejs16.x"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
@@ -92,6 +92,15 @@ resource "aws_lambda_function" "tasks_api" {
     Environment = "dev"
     Project     = "fil-rouge"
   }
+}
+
+# Permission pour API Gateway d'invoquer Lambda
+resource "aws_lambda_permission" "api_gateway_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tasks_api.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.tasks_api.execution_arn}/*/*"
 }
 
 # Rôle IAM pour Lambda
@@ -201,6 +210,8 @@ resource "aws_api_gateway_method" "options_task_id" {
   authorization = "NONE"
 }
 
+
+
 # Intégrations Lambda
 resource "aws_api_gateway_integration" "get_tasks_integration" {
   rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
@@ -229,6 +240,33 @@ resource "aws_api_gateway_integration" "delete_task_integration" {
   uri                     = aws_lambda_function.tasks_api.invoke_arn
 }
 
+# Intégration OPTIONS pour CORS
+resource "aws_api_gateway_integration" "options_tasks_integration" {
+  rest_api_id = aws_api_gateway_rest_api.tasks_api.id
+  resource_id = aws_api_gateway_resource.tasks_resource.id
+  http_method = aws_api_gateway_method.options_tasks.http_method
+  type        = "MOCK"
+  
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_integration" "options_task_id_integration" {
+  rest_api_id = aws_api_gateway_rest_api.tasks_api.id
+  resource_id = aws_api_gateway_resource.task_id_resource.id
+  http_method = aws_api_gateway_method.options_task_id.http_method
+  type        = "MOCK"
+  
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
 # CORS headers (manuels)
 resource "aws_api_gateway_method_response" "options_tasks_response" {
   rest_api_id = aws_api_gateway_rest_api.tasks_api.id
@@ -252,10 +290,45 @@ resource "aws_api_gateway_integration_response" "options_tasks_integration_respo
   resource_id = aws_api_gateway_resource.tasks_resource.id
   http_method = "OPTIONS"
   status_code = "200"
+  
+  depends_on = [aws_api_gateway_integration.options_tasks_integration]
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# CORS pour task_id
+resource "aws_api_gateway_method_response" "options_task_id_response" {
+  rest_api_id = aws_api_gateway_rest_api.tasks_api.id
+  resource_id = aws_api_gateway_resource.task_id_resource.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "options_task_id_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.tasks_api.id
+  resource_id = aws_api_gateway_resource.task_id_resource.id
+  http_method = "OPTIONS"
+  status_code = "200"
+  
+  depends_on = [aws_api_gateway_integration.options_task_id_integration]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,DELETE'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 }
@@ -266,8 +339,13 @@ resource "aws_api_gateway_deployment" "tasks_api_deployment" {
     aws_api_gateway_integration.get_tasks_integration,
     aws_api_gateway_integration.post_tasks_integration,
     aws_api_gateway_integration.delete_task_integration,
+    aws_api_gateway_integration.options_tasks_integration,
+    aws_api_gateway_integration.options_task_id_integration,
     aws_api_gateway_method_response.options_tasks_response,
-    aws_api_gateway_integration_response.options_tasks_integration_response
+    aws_api_gateway_method_response.options_task_id_response,
+    aws_api_gateway_integration_response.options_tasks_integration_response,
+    aws_api_gateway_integration_response.options_task_id_integration_response,
+    aws_lambda_permission.api_gateway_lambda
   ]
 
   rest_api_id = aws_api_gateway_rest_api.tasks_api.id
@@ -283,7 +361,10 @@ resource "aws_api_gateway_deployment" "tasks_api_deployment" {
       aws_api_gateway_method.options_task_id.id,
       aws_api_gateway_integration.get_tasks_integration.id,
       aws_api_gateway_integration.post_tasks_integration.id,
-      aws_api_gateway_integration.delete_task_integration.id
+      aws_api_gateway_integration.delete_task_integration.id,
+      aws_api_gateway_integration.options_tasks_integration.id,
+      aws_api_gateway_integration.options_task_id_integration.id,
+      aws_lambda_permission.api_gateway_lambda.id
     ]))
   }
 

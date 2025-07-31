@@ -11,12 +11,14 @@ function generateUUID() {
 
 exports.handler = async (event) => {
   console.log('Event:', JSON.stringify(event, null, 2));
+  console.log('Lambda version: v2.0 - CORS fixed');
   
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Credentials': 'false'
   };
 
   // Gestion CORS
@@ -29,10 +31,14 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { httpMethod, path, pathParameters } = event;
+    const { httpMethod, path, pathParameters, resource } = event;
+    
+    console.log('Path:', path);
+    console.log('Resource:', resource);
+    console.log('Method:', httpMethod);
     
     // GET /tasks - Récupérer toutes les tâches
-    if (httpMethod === 'GET' && path === '/tasks') {
+    if (httpMethod === 'GET' && (path === '/tasks' || path === '/prod/tasks' || resource === '/tasks')) {
       const result = await dynamo.scan({
         TableName: TABLE_NAME
       }).promise();
@@ -45,7 +51,7 @@ exports.handler = async (event) => {
     }
     
     // POST /tasks - Créer une nouvelle tâche
-    if (httpMethod === 'POST' && path === '/tasks') {
+    if (httpMethod === 'POST' && (path === '/tasks' || path === '/prod/tasks' || resource === '/tasks')) {
       const { title } = JSON.parse(event.body);
       
       if (!title) {
@@ -75,7 +81,8 @@ exports.handler = async (event) => {
     }
     
     // DELETE /tasks/{id} - Supprimer une tâche
-    if (httpMethod === 'DELETE' && pathParameters && pathParameters.id) {
+    if (httpMethod === 'DELETE' && pathParameters && pathParameters.id && 
+        (path.includes('/tasks/') || resource === '/tasks/{id}')) {
       await dynamo.delete({
         TableName: TABLE_NAME,
         Key: { id: pathParameters.id }
