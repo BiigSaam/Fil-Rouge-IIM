@@ -257,15 +257,6 @@ resource "aws_api_gateway_integration" "options_task_id_integration" {
   uri                    = aws_lambda_function.tasks_api.invoke_arn
 }
 
-# Permissions Lambda
-resource "aws_lambda_permission" "api_gateway_lambda" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tasks_api.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.tasks_api.execution_arn}/*/*"
-}
-
 # Déploiement API
 resource "aws_api_gateway_deployment" "tasks_api_deployment" {
   depends_on = [
