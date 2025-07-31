@@ -11,13 +11,10 @@ function App() {
   const [newTask, setNewTask] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // URL de l'API Gateway - Configuration simplifiée pour éviter les erreurs TypeScript
-  const API_BASE_URL = 'https://dwg7ep529i.execute-api.eu-west-1.amazonaws.com/prod';
-
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/tasks`);
+      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks`);
       if (!res.ok) throw new Error('Erreur lors du chargement des tâches');
       const data = await res.json();
       setTasks(data);
@@ -34,7 +31,7 @@ function App() {
     
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/tasks`, {
+      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newTask }),
@@ -56,7 +53,7 @@ function App() {
   const deleteTask = async (id: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+      const res = await fetch(`https://rpcix8ja83.execute-api.eu-west-1.amazonaws.com/prod/tasks/${id}`, {
         method: 'DELETE',
       });
       
